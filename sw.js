@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axel-weights-v3';
+const CACHE_NAME = 'axel-weights-v4';
 const urlsToCache = [
   '/MyAxleWeightsApp/',
   '/MyAxleWeightsApp/index.html',
