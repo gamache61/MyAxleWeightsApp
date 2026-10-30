@@ -1,10 +1,10 @@
 const CACHE_NAME = 'axel-weights-v3';
 const urlsToCache = [
-  '/MyAxelWeightsApp/',
-  '/MyAxelWeightsApp/index.html',
-  '/MyAxelWeightsApp/manifest.json',
-  '/MyAxelWeightsApp/icon-192x192.png',
-  '/MyAxelWeightsApp/icon-512x512.png'
+  '/MyAxleWeightsApp/',
+  '/MyAxleWeightsApp/index.html',
+  '/MyAxleWeightsApp/manifest.json',
+  '/MyAxleWeightsApp/icon-192x192.png',
+  '/MyAxleWeightsApp/icon-512x512.png'
 ];
 
 self.addEventListener('install', event => {
