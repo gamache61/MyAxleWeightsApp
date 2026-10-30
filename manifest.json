@@ -1,6 +1,6 @@
 {
-  "name": "My Axel Weights App",
-  "short_name": "AxelWeights",
+  "name": "Axle Weights",
+  "short_name": "Axle Weights",
   "description": "Track your axle weights - Western Canada Super-B calculator",
   "start_url": "/MyAxelWeightsApp/",
   "scope": "/MyAxelWeightsApp/",
@@ -19,5 +19,6 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "id": "/MyAxelWeightsApp/"
 }

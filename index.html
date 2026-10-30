@@ -39,5 +39,119 @@ Error generating stack: `+v.message+`
     }
   </script>
 
+  <!-- Gamache Apps unlock (demo limit + key) -->
+  <script>
+  (function () {
+    var APP = "AXLE";                                   // must match Stripe metadata "app"
+    var APP_NAME = "Axle Weights";
+    var DEMO_SECONDS = 60;
+    var BUY_URL = "https://gamache61.github.io/MyGamacheAppsWebsite/";
+    var SERVER = "https://gamache-downloads.gamacheapps.workers.dev";
+
+    var P = "gamache_" + APP + "_";
+    function get(k) { try { return localStorage.getItem(P + k); } catch (e) { return null; } }
+    function set(k, v) { try { localStorage.setItem(P + k, v); } catch (e) {} }
+
+    if (get("unlocked") === "1") return;
+
+    var device = get("device");
+    if (!device) {
+      device = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()).replace(/[^a-zA-Z0-9-]/g, "");
+      set("device", device);
+    }
+
+    var css = document.createElement("style");
+    css.textContent =
+      "#gk-btn{position:fixed;left:10px;bottom:10px;z-index:2147483646;background:#111c;color:#fff;border:1px solid #fff4;border-radius:999px;padding:7px 13px;font:600 13px system-ui,sans-serif;cursor:pointer}" +
+      "#gk-ov{position:fixed;inset:0;z-index:2147483647;background:#0b1118f2;display:none;align-items:center;justify-content:center;padding:16px;font-family:system-ui,sans-serif}" +
+      "#gk-card{background:#1a2532;color:#e8eef5;border-radius:16px;padding:26px;max-width:400px;width:100%;text-align:center;box-shadow:0 10px 40px #000a}" +
+      "#gk-card h2{margin:0 0 8px;font-size:1.35rem}#gk-card p{margin:6px 0 14px;opacity:.85;line-height:1.4}" +
+      "#gk-key{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #3a4a5c;background:#0f1720;color:#ffd166;font:600 1.15rem ui-monospace,Consolas,monospace;text-align:center;text-transform:uppercase;letter-spacing:1px}" +
+      ".gk-b{display:block;width:100%;margin-top:10px;padding:13px;border:0;border-radius:10px;font:600 1rem system-ui,sans-serif;cursor:pointer;text-decoration:none;box-sizing:border-box}" +
+      "#gk-go{background:#2f8cff;color:#fff}#gk-buy{background:#ffd166;color:#111}#gk-close{background:transparent;color:#9fb3c8}" +
+      "#gk-msg{min-height:1.2em;margin-top:10px;font-size:.9rem;color:#ff8a8a}";
+    document.head.appendChild(css);
+
+    var btn = document.createElement("button");
+    btn.id = "gk-btn";
+    btn.textContent = "🔑 Unlock";
+
+    var ov = document.createElement("div");
+    ov.id = "gk-ov";
+    ov.innerHTML =
+      '<div id="gk-card"><h2 id="gk-title"></h2><p id="gk-text"></p>' +
+      '<input id="gk-key" placeholder="' + APP + '-XXXX-XXXX" autocomplete="off" spellcheck="false">' +
+      '<button class="gk-b" id="gk-go">Unlock</button>' +
+      '<a class="gk-b" id="gk-buy" href="' + BUY_URL + '" target="_blank" rel="noopener">Buy ' + APP_NAME + '</a>' +
+      '<button class="gk-b" id="gk-close">Keep trying the demo</button>' +
+      '<div id="gk-msg"></div></div>';
+
+    function mount() {
+      document.body.appendChild(btn);
+      document.body.appendChild(ov);
+      btn.onclick = function () { show(false); };
+      document.getElementById("gk-close").onclick = function () { ov.style.display = "none"; };
+      document.getElementById("gk-go").onclick = activate;
+      document.getElementById("gk-key").addEventListener("keydown", function (e) { if (e.key === "Enter") activate(); });
+      if (used() >= DEMO_SECONDS) show(true);
+    }
+
+    function used() { return parseInt(get("used") || "0", 10) || 0; }
+
+    var locked = false;
+    function show(ended) {
+      locked = ended;
+      document.getElementById("gk-title").textContent = ended ? "Your free demo has ended" : "Unlock " + APP_NAME;
+      document.getElementById("gk-text").textContent = ended
+        ? "Buy " + APP_NAME + " to keep using it, or enter your unlock key."
+        : "Enter the unlock key from your purchase page.";
+      document.getElementById("gk-close").style.display = ended ? "none" : "block";
+      document.getElementById("gk-msg").textContent = "";
+      ov.style.display = "flex";
+      setTimeout(function () { document.getElementById("gk-key").focus(); }, 50);
+    }
+
+    function activate() {
+      var key = document.getElementById("gk-key").value.trim().toUpperCase().replace(/\s+/g, "");
+      var msg = document.getElementById("gk-msg");
+      if (!key) { msg.textContent = "Type your key first."; return; }
+      msg.style.color = "#9fb3c8";
+      msg.textContent = "Checking…";
+      fetch(SERVER + "/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: key, app: APP, device: device })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.ok) {
+            set("unlocked", "1");
+            set("key", key);
+            clearInterval(timer);
+            msg.style.color = "#7ee787";
+            msg.textContent = "Unlocked! Thank you.";
+            setTimeout(function () { ov.remove(); btn.remove(); }, 900);
+          } else {
+            msg.style.color = "#ff8a8a";
+            msg.textContent = d.error || "That key didn't work.";
+          }
+        })
+        .catch(function () {
+          msg.style.color = "#ff8a8a";
+          msg.textContent = "No internet connection. Connect once to unlock — after that it works offline.";
+        });
+    }
+
+    var timer = setInterval(function () {
+      if (document.hidden || locked) return;
+      var u = used() + 1;
+      set("used", String(u));
+      if (u >= DEMO_SECONDS) show(true);
+    }, 1000);
+
+    if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount);
+  })();
+  </script>
+
 </body>
 </html>
